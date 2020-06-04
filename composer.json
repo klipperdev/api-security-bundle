@@ -1,0 +1,36 @@
+{
+    "name": "klipper/api-security-bundle",
+    "type": "symfony-bundle",
+    "description": "API Security bundle of Klipper",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "François Pluchino",
+            "email": "francois.pluchino@klipper.dev"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^7.4.0",
+        "klipper/api-bundle": "^2.0.0",
+        "klipper/api-metadata-bundle": "^2.0.0",
+        "klipper/metadata-extensions-bundle": "^2.0.0",
+        "klipper/security-bundle": "^2.0.0"
+    },
+    "require-dev": {
+        "klipper/security-oauth-bundle": "^2.0.0",
+        "klipper/doctrine-extensions-extra-bundle": "^2.0.0"
+    },
+    "autoload": {
+        "psr-4": { "Klipper\\Bundle\\ApiSecurityBundle\\": "" },
+        "exclude-from-classmap": [
+            "**/Tests/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0-dev"
+        }
+    }
+}
