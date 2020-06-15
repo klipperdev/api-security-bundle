@@ -13,5 +13,10 @@
                 <argument type="service" id="service_container" />
             </call>
         </service>
+
+        <service id="Klipper\Bundle\ApiSecurityBundle\Controller\LogoutController"
+                 public="true">
+            <tag name="controller.service_arguments" />
+        </service>
     </services>
 </container>
