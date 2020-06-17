@@ -12,7 +12,7 @@
 namespace Klipper\Bundle\ApiSecurityBundle\Controller;
 
 use Klipper\Bundle\ApiBundle\Action\Update;
-use Klipper\Bundle\ApiBundle\Controller\AbstractController;
+use Klipper\Bundle\ApiBundle\Controller\ControllerHelper;
 use Klipper\Bundle\ApiBundle\View\Transformer\RoleObjectPermissionsTransformer;
 use Klipper\Bundle\ApiBundle\View\Transformer\RolePermissionsTransformer;
 use Klipper\Component\DoctrineExtensionsExtra\Entity\Repository\Traits\TranslatableRepositoryInterface;
@@ -32,42 +32,42 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @author François Pluchino <francois.pluchino@klipper.dev>
  */
-class RolePermissionController extends AbstractController
+class RolePermissionController
 {
     /**
      * Get the permissions of a role.
      *
-     * @param PermissionMetadataManagerInterface $pmManager The permission metadata manager
-     * @param int|string                         $id        The role id
-     *
-     * @return Response
+     * @param int|string $id The role id
      *
      * @Route("/roles/{id}/permissions", methods={"GET"})
      */
-    public function viewsAction(PermissionMetadataManagerInterface $pmManager, $id)
-    {
-        $role = $this->getRole($id, true);
-        $this->addViewTransformer(new RolePermissionsTransformer($pmManager));
+    public function viewsAction(
+        ControllerHelper $helper,
+        PermissionMetadataManagerInterface $pmManager,
+        $id
+    ): Response {
+        $role = $this->getRole($helper, $id, true);
+        $helper->addViewTransformer(new RolePermissionsTransformer($pmManager));
 
-        return $this->view($role);
+        return $helper->view($role);
     }
 
     /**
      * Update the permissions of a role.
      *
-     * @param PermissionMetadataManagerInterface $pmManager The permission metadata manager
-     * @param int|string                         $id        The role id
-     *
-     * @return Response
+     * @param int|string $id The role id
      *
      * @Route("/roles/{id}/permissions", methods={"PATCH"})
      */
-    public function updateAction(PermissionMetadataManagerInterface $pmManager, $id)
-    {
-        $role = $this->getRole($id, false);
-        $this->addViewTransformer(new RolePermissionsTransformer($pmManager, true));
+    public function updateAction(
+        ControllerHelper $helper,
+        PermissionMetadataManagerInterface $pmManager,
+        $id
+    ): Response {
+        $role = $this->getRole($helper, $id, false);
+        $helper->addViewTransformer(new RolePermissionsTransformer($pmManager, true));
 
-        return $this->update(Update::build(
+        return $helper->update(Update::build(
             RolePermissionType::class,
             $role
         ));
@@ -76,41 +76,43 @@ class RolePermissionController extends AbstractController
     /**
      * Get the object permissions of a role.
      *
-     * @param PermissionMetadataManagerInterface $pmManager The permission metadata manager
-     * @param int|string                         $id        The role id
-     * @param string                             $object    The name of object metadata
-     *
-     * @return Response
+     * @param int|string $id     The role id
+     * @param string     $object The name of object metadata
      *
      * @Route("/roles/{id}/objects/{object}/permissions", methods={"GET"})
      */
-    public function viewObjectAction(PermissionMetadataManagerInterface $pmManager, $id, string $object)
-    {
-        $role = $this->getRole($id, true);
-        $this->addViewTransformer(new RoleObjectPermissionsTransformer($pmManager, $object));
+    public function viewObjectAction(
+        ControllerHelper $helper,
+        PermissionMetadataManagerInterface $pmManager,
+        $id,
+        string $object
+    ): Response {
+        $role = $this->getRole($helper, $id, true);
+        $helper->addViewTransformer(new RoleObjectPermissionsTransformer($pmManager, $object));
 
         try {
-            return $this->view($role);
+            return $helper->view($role);
         } catch (ObjectMetadataNotFoundException $e) {
-            throw $this->createNotFoundException();
+            throw $helper->createNotFoundException();
         }
     }
 
     /**
      * Update the object permissions of a role.
      *
-     * @param PermissionMetadataManagerInterface $pmManager The permission metadata manager
-     * @param int|string                         $id        The role id
-     * @param string                             $object    The name of object metadata
-     *
-     * @return Response
+     * @param int|string $id     The role id
+     * @param string     $object The name of object metadata
      *
      * @Route("/roles/{id}/objects/{object}/permissions", methods={"PATCH"})
      */
-    public function updateObjectAction(PermissionMetadataManagerInterface $pmManager, $id, string $object)
-    {
-        $role = $this->getRole($id, false);
-        $this->addViewTransformer(new RoleObjectPermissionsTransformer(
+    public function updateObjectAction(
+        ControllerHelper $helper,
+        PermissionMetadataManagerInterface $pmManager,
+        $id,
+        string $object
+    ): Response {
+        $role = $this->getRole($helper, $id, false);
+        $helper->addViewTransformer(new RoleObjectPermissionsTransformer(
             $pmManager,
             $object,
             true
@@ -123,35 +125,38 @@ class RolePermissionController extends AbstractController
                 'object' => $object,
             ]);
 
-            return $this->update($update);
+            return $helper->update($update);
         } catch (ObjectMetadataNotFoundException $e) {
-            throw $this->createNotFoundException();
+            throw $helper->createNotFoundException();
         }
     }
 
     /**
      * @param int|string $id
      */
-    private function getRole($id, bool $readOnly): RoleInterface
-    {
+    private function getRole(
+        ControllerHelper $helper,
+        $id,
+        bool $readOnly
+    ): RoleInterface {
         if (class_exists(ScopeVote::class)) {
             $scopes = $readOnly ? ['meta/role'] : ['meta/role', 'meta/role.readonly'];
-            $this->denyAccessUnlessGranted(new ScopeVote($scopes, false));
+            $helper->denyAccessUnlessGranted(new ScopeVote($scopes, false));
         }
 
         if (!$readOnly) {
-            $this->denyAccessUnlessGranted(new PermVote('manage-permissions'));
+            $helper->denyAccessUnlessGranted(new PermVote('manage-permissions'));
         }
 
-        $repo = $this->getDomain(RoleInterface::class)->getRepository();
+        $repo = $helper->getRepository(RoleInterface::class);
         $repoMethod = $repo instanceof TranslatableRepositoryInterface ? 'findOneTranslatedById' : 'findOneById';
         $role = $repo->{$repoMethod}($id);
 
         if (null === $role) {
-            throw $this->createNotFoundException();
+            throw $helper->createNotFoundException();
         }
 
-        $this->denyAccessUnlessGranted(new PermVote('view'), $role);
+        $helper->denyAccessUnlessGranted(new PermVote('view'), $role);
 
         return $role;
     }

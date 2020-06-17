@@ -11,24 +11,20 @@
 
 namespace Klipper\Bundle\ApiSecurityBundle\DependencyInjection;
 
-use Symfony\Component\Config\FileLocator;
+use Klipper\Bundle\ApiBundle\Util\ControllerDefinitionUtil;
+use Klipper\Bundle\ApiSecurityBundle\Controller\LogoutController;
+use Klipper\Bundle\ApiSecurityBundle\Controller\RolePermissionController;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 /**
- * This is the class that loads and manages your bundle configuration.
- *
  * @author François Pluchino <francois.pluchino@klipper.dev>
  */
 class KlipperApiSecurityExtension extends Extension
 {
-    /**
-     * @throws
-     */
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('controller.xml');
+        ControllerDefinitionUtil::set($container, RolePermissionController::class);
+        ControllerDefinitionUtil::set($container, LogoutController::class);
     }
 }
